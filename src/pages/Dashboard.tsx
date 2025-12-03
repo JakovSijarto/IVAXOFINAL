@@ -146,6 +146,7 @@ export const Dashboard: React.FC = () => {
       muted
       loop
       playsInline
+      preload="metadata"
       className="
         relative z-[3]
         w-full h-[88vh] object-cover

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface GalleryProps {
   title: string;
@@ -8,6 +8,12 @@ interface GalleryProps {
 }
 
 export const Gallery: React.FC<GalleryProps> = ({ title, items, type, onItemClick }) => {
+  const [loadedItems, setLoadedItems] = useState<Set<number>>(new Set());
+
+  const handleItemLoad = (index: number) => {
+    setLoadedItems((prev) => new Set(prev).add(index));
+  };
+
   return (
     <div className="w-full">
       <div className="bg-slate-900 py-8 mb-0 border-b-4 border-pink-500">
@@ -20,13 +26,21 @@ export const Gallery: React.FC<GalleryProps> = ({ title, items, type, onItemClic
           <div
             key={index}
             onClick={onItemClick}
-            className="relative aspect-square bg-slate-200 cursor-pointer hover:scale-105 transition-all duration-300 overflow-hidden group rounded-xl border-2 border-slate-600 hover:border-pink-500 shadow-lg hover:shadow-pink-500/50"
+            className="relative aspect-square bg-slate-700 cursor-pointer hover:scale-105 transition-all duration-300 overflow-hidden group rounded-xl border-2 border-slate-600 hover:border-pink-500 shadow-lg hover:shadow-pink-500/50"
           >
+            {!loadedItems.has(index) && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin"></div>
+              </div>
+            )}
             {type === 'photo' ? (
               <img
                 src={item}
                 alt={`${title} ${index + 1}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                onLoad={() => handleItemLoad(index)}
+                style={{ opacity: loadedItems.has(index) ? 1 : 0 }}
               />
             ) : (
               <div className="relative w-full h-full">
@@ -36,6 +50,9 @@ export const Gallery: React.FC<GalleryProps> = ({ title, items, type, onItemClic
                   muted
                   loop
                   playsInline
+                  preload="metadata"
+                  onLoadedData={() => handleItemLoad(index)}
+                  style={{ opacity: loadedItems.has(index) ? 1 : 0 }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
                   <svg
