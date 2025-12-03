@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     const requestBody = await req.json();
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
-    const { price_id, success_url, cancel_url, mode, guest_email } = requestBody;
+    const { price_id, setup_fee_price_id, success_url, cancel_url, mode, guest_email } = requestBody;
 
     const error = validateParameters(
       { price_id, success_url, cancel_url, mode },
@@ -174,14 +174,23 @@ Deno.serve(async (req) => {
     const origin = req.headers.get('origin') || '/';
     const contentSuccessUrl = `${origin}/content`;
 
+    const lineItems: any[] = [
+      {
+        price: price_id,
+        quantity: 1,
+      },
+    ];
+
+    if (setup_fee_price_id) {
+      lineItems.push({
+        price: setup_fee_price_id,
+        quantity: 1,
+      });
+    }
+
     const sessionParams: any = {
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: price_id,
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode,
       success_url: contentSuccessUrl,
       cancel_url,
