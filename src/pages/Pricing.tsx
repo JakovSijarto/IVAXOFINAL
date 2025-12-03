@@ -13,11 +13,20 @@ export const Pricing: React.FC = () => {
       setLoading(priceId);
       setError('');
 
-      // --- CALL BACKEND LIVE FUNCTION ---
-      const res = await fetch('/supabase/functions/stripe-checkout', {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`;
+
+      const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          price_id: priceId,
+          mode: 'subscription',
+          success_url: `${window.location.origin}/content`,
+          cancel_url: `${window.location.origin}/pricing`
+        }),
       });
 
       const data = await res.json();
@@ -26,7 +35,6 @@ export const Pricing: React.FC = () => {
         throw new Error('Checkout nije uspio.');
       }
 
-      // --- REDIRECT TO LIVE STRIPE CHECKOUT ---
       window.location.href = data.url;
 
     } catch (err: any) {
