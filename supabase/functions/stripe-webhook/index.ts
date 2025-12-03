@@ -212,6 +212,44 @@ async function syncCustomerFromStripe(customerId: string) {
       throw new Error('Failed to sync subscription in database');
     }
     console.info(`Successfully synced subscription for customer: ${customerId}`);
+
+    if (subscription.status === 'active' || subscription.status === 'trialing') {
+      const { data: existingCharge } = await supabase
+        .from('stripe_subscriptions')
+        .select('additional_charge_applied')
+        .eq('customer_id', customerId)
+        .maybeSingle();
+
+      if (!existingCharge?.additional_charge_applied) {
+        console.info(`Applying additional 29 EUR charge for customer: ${customerId}`);
+
+        try {
+          await stripe.invoiceItems.create({
+            customer: customerId,
+            amount: 2900,
+            currency: 'eur',
+            description: 'Initial setup fee',
+          });
+
+          const invoice = await stripe.invoices.create({
+            customer: customerId,
+            auto_advance: true,
+          });
+
+          await stripe.invoices.finalizeInvoice(invoice.id);
+          await stripe.invoices.pay(invoice.id);
+
+          await supabase
+            .from('stripe_subscriptions')
+            .update({ additional_charge_applied: true })
+            .eq('customer_id', customerId);
+
+          console.info(`Successfully charged additional 29 EUR for customer: ${customerId}`);
+        } catch (chargeError: any) {
+          console.error(`Failed to charge additional 29 EUR for customer ${customerId}:`, chargeError.message);
+        }
+      }
+    }
   } catch (error) {
     console.error(`Failed to sync subscription for customer ${customerId}:`, error);
     throw error;

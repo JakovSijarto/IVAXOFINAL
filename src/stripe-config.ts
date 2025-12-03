@@ -6,7 +6,7 @@ export interface StripeProduct {
   price: number;
   currency: string;
   currencySymbol: string;
-  setupFeePriceId?: string;
+  additionalCharge?: number;
 }
 
 export const stripeProducts: StripeProduct[] = [
@@ -15,9 +15,9 @@ export const stripeProducts: StripeProduct[] = [
     name: 'Ivaxo Partner',
     description: 'Full access to Ivaxo premium photos & videos.',
     mode: 'subscription',
-    price: 30.00,
+    price: 1.00,
     currency: 'eur',
     currencySymbol: '€',
-    setupFeePriceId: 'price_1SaDMXGp8AV7HwpgiL7xZXe3',
+    additionalCharge: 29.00,
   },
 ];

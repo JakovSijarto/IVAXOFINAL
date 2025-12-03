@@ -8,7 +8,7 @@ export const Pricing: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const handlePurchase = async (priceId: string, setupFeePriceId?: string) => {
+  const handlePurchase = async (priceId: string) => {
     try {
       setLoading(priceId);
       setError('');
@@ -23,7 +23,6 @@ export const Pricing: React.FC = () => {
         },
         body: JSON.stringify({
           price_id: priceId,
-          setup_fee_price_id: setupFeePriceId,
           mode: 'subscription',
           success_url: `${window.location.origin}/content`,
           cancel_url: `${window.location.origin}/pricing`
@@ -137,7 +136,7 @@ export const Pricing: React.FC = () => {
                       bg-gradient-to-br from-slate-900 to-black
                       shadow-xl hover:shadow-2xl transition-all duration-300
                     "
-                    onClick={() => handlePurchase(product.priceId, product.setupFeePriceId)}
+                    onClick={() => handlePurchase(product.priceId)}
                     loading={loading === product.priceId}
                     disabled={loading !== null}
                   >
