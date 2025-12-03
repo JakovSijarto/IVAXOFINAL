@@ -15,6 +15,8 @@ export const Pricing: React.FC = () => {
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`;
 
+      console.log('Calling checkout API:', apiUrl);
+
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -29,16 +31,34 @@ export const Pricing: React.FC = () => {
         }),
       });
 
+      console.log('Response status:', res.status);
+      console.log('Response headers:', res.headers);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Greška: ${res.status} - ${errorText}`);
+      }
+
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server nije vratio ispravan odgovor. Molimo pokušajte ponovo.');
+      }
+
       const data = await res.json();
+      console.log('Checkout response:', data);
 
       if (!data.url) {
-        throw new Error('Checkout nije uspio.');
+        throw new Error('Checkout URL nije pronađen. Molimo pokušajte ponovo.');
       }
 
       window.location.href = data.url;
 
     } catch (err: any) {
-      setError(err.message || 'Došlo je do greške.');
+      console.error('Checkout error:', err);
+      setError(err.message || 'Došlo je do greške. Molimo pokušajte ponovo.');
     } finally {
       setLoading(null);
     }

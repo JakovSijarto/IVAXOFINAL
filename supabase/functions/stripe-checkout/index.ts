@@ -15,7 +15,8 @@ function corsResponse(body: string | object | null, status = 200) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+    'Content-Type': 'application/json',
   };
 
   if (status === 204) {
@@ -24,10 +25,7 @@ function corsResponse(body: string | object | null, status = 200) {
 
   return new Response(JSON.stringify(body), {
     status,
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 }
 
@@ -36,12 +34,14 @@ Deno.serve(async (req) => {
     console.log('=== Stripe Checkout Request Started ===');
     console.log('Method:', req.method);
     console.log('Origin:', req.headers.get('origin'));
+    console.log('URL:', req.url);
 
     if (req.method === 'OPTIONS') {
-      return corsResponse({}, 204);
+      return corsResponse(null, 204);
     }
 
     if (req.method !== 'POST') {
+      console.error('Invalid method:', req.method);
       return corsResponse({ error: 'Method not allowed' }, 405);
     }
 
@@ -200,12 +200,14 @@ Deno.serve(async (req) => {
 
     return corsResponse({ sessionId: session.id, url: session.url });
   } catch (error: any) {
-    console.error('❌ CHECKOUT ERROR:', error.message);
+    console.error('❌ CHECKOUT ERROR:', error);
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('Error details:', JSON.stringify(error, null, 2));
+
     return corsResponse({
-      error: `Failed to create checkout session: ${error.message}`,
-      details: error.toString()
+      error: error.message || 'Failed to create checkout session',
+      type: error.type || 'unknown_error',
+      statusCode: error.statusCode || 500
     }, 500);
   }
 });
