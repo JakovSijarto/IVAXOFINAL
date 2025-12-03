@@ -13,31 +13,41 @@ export const Pricing: React.FC = () => {
       setLoading(priceId);
       setError('');
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Konfiguracija nije dostupna. Molimo kontaktirajte podršku.');
+      }
+
+      const apiUrl = `${supabaseUrl}/functions/v1/stripe-checkout`;
       console.log('Calling checkout API:', apiUrl);
+
+      const requestBody = {
+        price_id: priceId,
+        mode: 'subscription',
+        success_url: `${window.location.origin}/content`,
+        cancel_url: `${window.location.origin}/pricing`
+      };
+
+      console.log('Request body:', requestBody);
 
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'apikey': supabaseAnonKey
         },
-        body: JSON.stringify({
-          price_id: priceId,
-          mode: 'subscription',
-          success_url: `${window.location.origin}/content`,
-          cancel_url: `${window.location.origin}/pricing`
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log('Response status:', res.status);
-      console.log('Response headers:', res.headers);
 
       if (!res.ok) {
         const errorText = await res.text();
         console.error('Error response:', errorText);
-        throw new Error(`Greška: ${res.status} - ${errorText}`);
+        throw new Error(`Greška: ${res.status}. Molimo pokušajte ponovo ili kontaktirajte podršku.`);
       }
 
       const contentType = res.headers.get('content-type');
@@ -50,10 +60,15 @@ export const Pricing: React.FC = () => {
       const data = await res.json();
       console.log('Checkout response:', data);
 
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       if (!data.url) {
         throw new Error('Checkout URL nije pronađen. Molimo pokušajte ponovo.');
       }
 
+      console.log('Redirecting to:', data.url);
       window.location.href = data.url;
 
     } catch (err: any) {
